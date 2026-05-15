@@ -1033,7 +1033,7 @@ sidra_municipios <- bind_rows(
 # BANCO FINAL
 SIDRA_RJ <- bind_rows(
   sidra_uf,
-  sidra_municipios
+  sidra_municipios[-1,]
 )
 
 # EXPORTAR CSV

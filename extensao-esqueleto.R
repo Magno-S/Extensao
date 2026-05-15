@@ -731,6 +731,316 @@ write_csv(
 # Exporte o arquivo em formato CSV
 # Faça o commit com a mensagem "Script e dados TAREFA 3 - SIDRA"
 
+library(dplyr)
+library(readr)
+
+pop_estimada <- read_csv2("população residente estimada - UF e municípios - 2015 - SIDRA - tabela_6579.csv")
+pop_total_sexo <- read_csv2("população residente censo 2010 - UF e municípios - total e por sexo - SIDRA - tabela_1552.csv")
+pop_faixa_uf <- read_csv2("população residente censo 2010 - por faixa etária -  UF - SIDRA - tabela_1552.csv")
+pop_faixa_mun <- read_csv2("população residente censo 2010 - por faixa etária e sexo -  municípios - SIDRA - tabela_1552.csv")
+
+# FILTRAR RIO DE JANEIRO
+pop_estimada <- pop_estimada %>%
+  filter(substr(CODMUNRES, 1, 2) == "33")
+
+pop_total_sexo <- pop_total_sexo %>%
+  filter(substr(CODMUNRES, 1, 2) == "33")
+
+pop_faixa_uf <- pop_faixa_uf %>%
+  filter(substr(CODMUNRES, 1, 2) == "33")
+
+pop_faixa_mun <- pop_faixa_mun %>%
+  filter(substr(CODMUNRES, 1, 2) == "33")
+
+# UF
+sidra_uf <- data.frame(
+  
+  ANO = 2015,
+  NIVEL = "UF",
+  CODMUNRES = 33,
+  
+  # população estimada total
+  POPRE_T = sum(
+    as.numeric(pop_estimada$POPRE_T),
+    na.rm = TRUE
+  ),
+  
+  # população censo total
+  POPRC_T = sum(
+    as.numeric(pop_total_sexo$POPRC_T),
+    na.rm = TRUE
+  ),
+  
+  # masculina
+  POPRC_M = sum(
+    as.numeric(pop_total_sexo$POPRC_M),
+    na.rm = TRUE
+  ),
+  
+  # feminina
+  POPRC_F = sum(
+    as.numeric(pop_total_sexo$POPRC_F),
+    na.rm = TRUE
+  ),
+  
+  # < 15 anos
+  POPRC_15 = sum(
+    as.numeric(pop_faixa_uf$POP[
+      pop_faixa_uf$F_IDADE %in% c(
+        "0 a 4 anos",
+        "5 a 9 anos",
+        "10 a 14 anos"
+      )
+    ]),
+    na.rm = TRUE
+  ),
+  
+  # 15 a 49
+  POPRC_15_49 = sum(
+    as.numeric(pop_faixa_uf$POP[
+      pop_faixa_uf$F_IDADE %in% c(
+        "15 a 19 anos",
+        "20 a 24 anos",
+        "25 a 29 anos",
+        "30 a 34 anos",
+        "35 a 39 anos",
+        "40 a 44 anos",
+        "45 a 49 anos"
+      )
+    ]),
+    na.rm = TRUE
+  ),
+  
+  # 50+
+  POPRC_50 = sum(
+    as.numeric(pop_faixa_uf$POP[
+      !(pop_faixa_uf$F_IDADE %in% c(
+        "0 a 4 anos",
+        "5 a 9 anos",
+        "10 a 14 anos",
+        "15 a 19 anos",
+        "20 a 24 anos",
+        "25 a 29 anos",
+        "30 a 34 anos",
+        "35 a 39 anos",
+        "40 a 44 anos",
+        "45 a 49 anos"
+      ))
+    ]),
+    na.rm = TRUE
+  ),
+  
+  # feminino <15 CENSO
+  POPRC_F_15 = sum(
+    as.numeric(pop_faixa_mun$POPF[
+      pop_faixa_mun$F_IDADE %in% c(
+          "0 a 4 anos",
+          "5 a 9 anos",
+          "10 a 14 anos"
+        )
+    ]),
+    na.rm = TRUE
+  ),
+  
+  # feminino 15-49 CENSO
+  POPRC_F_15_49 = sum(
+    as.numeric(pop_faixa_mun$POPF[
+      pop_faixa_mun$F_IDADE %in% c(
+          "15 a 19 anos",
+          "20 a 24 anos",
+          "25 a 29 anos",
+          "30 a 34 anos",
+          "35 a 39 anos",
+          "40 a 44 anos",
+          "45 a 49 anos"
+        )
+    ]),
+    na.rm = TRUE
+  ),
+  
+  # feminino 50+ CENSO
+  POPRC_F_50 = sum(
+    as.numeric(pop_faixa_mun$POPF[
+      !(pop_faixa_mun$F_IDADE %in% c(
+          "0 a 4 anos",
+          "5 a 9 anos",
+          "10 a 14 anos",
+          "15 a 19 anos",
+          "20 a 24 anos",
+          "25 a 29 anos",
+          "30 a 34 anos",
+          "35 a 39 anos",
+          "40 a 44 anos",
+          "45 a 49 anos"
+        ))
+    ]),
+    na.rm = TRUE
+  )
+)
+
+# MUNICÍPIOS
+municipios_rj <- unique(
+  pop_estimada$CODMUNRES[
+    substr(pop_estimada$CODMUNRES, 1, 2) == "33"
+  ]
+)
+
+sidra_municipios <- bind_rows(
+  
+  lapply(municipios_rj, function(cod) {
+    
+    data.frame(
+      
+      ANO = 2015,
+      NIVEL = "MUNICIPIO",
+      CODMUNRES = cod,
+      
+      # população estimada total
+      POPRE_T = sum(
+        as.numeric(pop_estimada$POPRE_T[
+          pop_estimada$CODMUNRES == cod
+        ]),
+        na.rm = TRUE
+      ),
+      
+      # população censo total
+      POPRC_T = sum(
+        as.numeric(pop_total_sexo$POPRC_T[
+          pop_total_sexo$CODMUNRES == cod
+        ]),
+        na.rm = TRUE
+      ),
+      
+      # masculina
+      POPRC_M = sum(
+        as.numeric(pop_total_sexo$POPRC_M[
+          pop_total_sexo$CODMUNRES == cod 
+        ]),
+        na.rm = TRUE
+      ),
+      
+      # feminina
+      POPRC_F = sum(
+        as.numeric(pop_total_sexo$POPRC_F[
+          pop_total_sexo$CODMUNRES == cod 
+        ]),
+        na.rm = TRUE
+      ),
+      
+      # < 15 anos
+      POPRC_15 = sum(
+        as.numeric(pop_faixa_mun$POP[
+          pop_faixa_mun$CODMUNRES == cod &
+            pop_faixa_mun$F_IDADE %in% c(
+              "0 a 4 anos",
+              "5 a 9 anos",
+              "10 a 14 anos"
+            )
+        ]),
+        na.rm = TRUE
+      ),
+      
+      # 15 a 49
+      POPRC_15_49 = sum(
+        as.numeric(pop_faixa_mun$POP[
+          pop_faixa_mun$CODMUNRES == cod &
+            pop_faixa_mun$F_IDADE %in% c(
+              "15 a 19 anos",
+              "20 a 24 anos",
+              "25 a 29 anos",
+              "30 a 34 anos",
+              "35 a 39 anos",
+              "40 a 44 anos",
+              "45 a 49 anos"
+            )
+        ]),
+        na.rm = TRUE
+      ),
+      
+      # 50+
+      POPRC_50 = sum(
+        as.numeric(pop_faixa_mun$POP[
+          pop_faixa_mun$CODMUNRES == cod &
+            !(pop_faixa_mun$F_IDADE %in% c(
+              "0 a 4 anos",
+              "5 a 9 anos",
+              "10 a 14 anos",
+              "15 a 19 anos",
+              "20 a 24 anos",
+              "25 a 29 anos",
+              "30 a 34 anos",
+              "35 a 39 anos",
+              "40 a 44 anos",
+              "45 a 49 anos"
+            ))
+        ]),
+        na.rm = TRUE
+      ),
+      
+      # feminino <15 CENSO
+      POPRC_F_15 = sum(
+        as.numeric(pop_faixa_mun$POPF[
+          pop_faixa_mun$CODMUNRES == cod &
+            pop_faixa_mun$F_IDADE %in% c(
+              "0 a 4 anos",
+              "5 a 9 anos",
+              "10 a 14 anos"
+            )
+        ]),
+        na.rm = TRUE
+      ),
+      
+      # feminino 15-49 CENSO
+      POPRC_F_15_49 = sum(
+        as.numeric(pop_faixa_mun$POPF[
+          pop_faixa_mun$CODMUNRES == cod &
+            pop_faixa_mun$F_IDADE %in% c(
+              "15 a 19 anos",
+              "20 a 24 anos",
+              "25 a 29 anos",
+              "30 a 34 anos",
+              "35 a 39 anos",
+              "40 a 44 anos",
+              "45 a 49 anos"
+            )
+        ]),
+        na.rm = TRUE
+      ),
+      
+      # feminino 50+ CENSO
+      POPRC_F_50 = sum(
+        as.numeric(pop_faixa_mun$POPF[
+          pop_faixa_mun$CODMUNRES == cod &
+            !(pop_faixa_mun$F_IDADE %in% c(
+              "0 a 4 anos",
+              "5 a 9 anos",
+              "10 a 14 anos",
+              "15 a 19 anos",
+              "20 a 24 anos",
+              "25 a 29 anos",
+              "30 a 34 anos",
+              "35 a 39 anos",
+              "40 a 44 anos",
+              "45 a 49 anos"
+            ))
+        ]),
+        na.rm = TRUE
+      )
+    )
+  })
+)
+
+# BANCO FINAL
+SIDRA_RJ <- bind_rows(
+  sidra_uf,
+  sidra_municipios
+)
+
+# EXPORTAR CSV
+write_csv(
+  SIDRA_RJ,
+  "SIDRA_RJ.csv"
+)
 
 
 #####################################################################################################

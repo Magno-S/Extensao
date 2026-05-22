@@ -1051,10 +1051,50 @@ write_csv(
 # 3  CODMUNRES
 # 4 POPR_RA
 # 5 POPR_RE
-
+library(dplyr)
+library(readr)
+library(stringr)
 # Exporte o arquivo em formato CSV
 # Faça o commit com a mensagem "Script e dados TAREFA 3 - SINISA"
 
+sinisa <- read_csv2("agua e esgoto - município - 2015.csv")
+
+# Filtrar municípios do RJ
+sinisa_rj <- sinisa %>%
+  mutate(CODMUNRES = as.character(CODMUNRES)) %>%
+  filter(substr(CODMUNRES, 1, 2) == "33")
+
+# Banco final SINISA_RJ
+SINISA_RJ <- sinisa_rj %>%
+  transmute(
+    ANO = 2015,
+    NIVEL = "M",
+    CODMUNRES,
+    POPR_RA,
+    POPR_RE
+  )
+
+# ===================================================
+# LINHA AGREGADA DO ESTADO (RJ)
+# ===================================================
+
+SINISA_RJ_UF <- SINISA_RJ %>%
+  summarise(
+    ANO = 2015,
+    NIVEL = "UF",
+    CODMUNRES = "33",
+    POPR_RA = sum(POPR_RA, na.rm = TRUE),
+    POPR_RE = sum(POPR_RE, na.rm = TRUE)
+  )
+
+# Juntar UF + municípios
+SINISA_RJ <- bind_rows(
+  SINISA_RJ_UF,
+  SINISA_RJ
+)
+
+# Exportar
+write_csv(SINISA_RJ, "SINISA_RJ.csv")
 
 # Tarefa 3: Acesso aos bancos de dados do ATLAS  e obtenção da informação
 # Escreva os comandos da Tarefa 3 estando na branch OUTROS

@@ -1134,13 +1134,7 @@ codigos <- codigos %>%
 codigos$MUNICIPIO <- as.character(codigos$MUNICIPIO)
 codigos$CODMUNRES <- as.character(codigos$CODMUNRES)
 
-#####################################################
-# 4. AJUSTAR BASE MUNICIPAL DO ATLAS
-#####################################################
-
-# A professora informou que:
-# "Rio de Janeiro (RJ)" deve virar "Rio de Janeiro"
-
+# AJUSTAR BASE MUNICIPAL DO ATLAS
 atlas_mun <- atlas_mun %>%
   mutate(
     MUNICIPIO = substr(`município`,

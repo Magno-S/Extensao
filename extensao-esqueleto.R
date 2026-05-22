@@ -1074,10 +1074,7 @@ SINISA_RJ <- sinisa_rj %>%
     POPR_RE
   )
 
-# ===================================================
-# LINHA AGREGADA DO ESTADO (RJ)
-# ===================================================
-
+# Linha do RJ
 SINISA_RJ_UF <- SINISA_RJ %>%
   summarise(
     ANO = 2015,
@@ -1112,6 +1109,117 @@ write_csv(SINISA_RJ, "SINISA_RJ.csv")
 # 7 IDHM_CA_F
 
 # Exporte o arquivo em formato CSV# Faça o commit com a mensagem "Script e dados TAREFA 3 - ATLAS"
+
+codigos <- read_csv2(
+  "códigos dos municípios - 2010.csv",
+  locale = locale(encoding = "UTF-8")
+)
+atlas_uf <- read_csv2(
+  "IDHM - 2010 (CENSO) e 2015 (PNAD) - total e por sexo - UF - Atlas Brasil.csv",
+  locale = locale(encoding = "UTF-8")
+)
+atlas_mun <- read_csv2(
+  "IDHM - 2010 - municípios - Atlas Brasil.csv",
+  locale = locale(encoding = "UTF-8")
+)
+
+# Ajuste os nomes diferentes
+codigos <- codigos %>%
+  rename(
+    MUNICIPIO = 1,
+    CODMUNRES = 2
+  )
+
+# Garantir formato texto
+codigos$MUNICIPIO <- as.character(codigos$MUNICIPIO)
+codigos$CODMUNRES <- as.character(codigos$CODMUNRES)
+
+#####################################################
+# 4. AJUSTAR BASE MUNICIPAL DO ATLAS
+#####################################################
+
+# A professora informou que:
+# "Rio de Janeiro (RJ)" deve virar "Rio de Janeiro"
+
+atlas_mun <- atlas_mun %>%
+  mutate(
+    MUNICIPIO = substr(`município`,
+                       1,
+                       nchar(`município`) - 5)
+  )
+
+# Garantir texto
+atlas_mun$MUNICIPIO <- as.character(atlas_mun$MUNICIPIO)
+
+# REMOVER DUPLICADOS
+atlas_mun <- atlas_mun %>%
+  distinct(MUNICIPIO, .keep_all = TRUE)
+
+codigos <- codigos %>%
+  distinct(MUNICIPIO, .keep_all = TRUE)
+
+# MERGE MUNICÍPIO
+atlas_merge <- left_join(
+  atlas_mun,
+  codigos,
+  by = "MUNICIPIO"
+)
+
+# FILTRAR APENAS MUNICÍPIOS DO RJ
+atlas_merge <- atlas_merge %>%
+  mutate(
+    CODMUNRES = as.character(CODMUNRES)
+  ) %>%
+  filter(substr(CODMUNRES, 1, 2) == "33")
+
+# CRIAR BASE MUNICIPAL
+ATLAS_RJ_MUN <- atlas_merge %>%
+  transmute(
+    
+    ANO = 2010,
+    
+    NIVEL = "RJ",
+    
+    CODMUNRES = "33",
+    
+    IDHM_A = as.numeric(gsub(",", ".", IDHM_2010)),
+    
+    IDHM_CA = as.numeric(gsub(",", ".", IDHM_2010)),
+    
+    IDHM_CA_M = NA ,
+    
+    IDHM_CA_F = NA
+  )
+
+atlas_uf_rj <- atlas_uf %>%
+  filter(UF == "Rio de Janeiro")
+
+ATLAS_RJ_UF <- atlas_uf_rj %>%
+  transmute(
+    
+    ANO = 2015,
+    
+    NIVEL = "RJ",
+    
+    CODMUNRES = "33",
+    
+    IDHM_A = as.numeric(gsub(",", ".", IDHM_2015)),
+    
+    IDHM_CA = as.numeric(gsub(",", ".", IDHM_2015)),
+    
+    IDHM_CA_M = as.numeric(gsub(",", ".", IDHM_2015_M)),
+    
+    IDHM_CA_F = as.numeric(gsub(",", ".", IDHM_2015_F))
+  )
+
+# JUNTAR UF + MUNICÍPIOS
+ATLAS_RJ <- bind_rows(
+  ATLAS_RJ_UF,
+  ATLAS_RJ_MUN
+)
+
+# EXPORTAR
+write_csv(ATLAS_RJ, "ATLAS_RJ.csv")
 
 
 #####################################################################################################

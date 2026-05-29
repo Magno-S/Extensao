@@ -1285,6 +1285,47 @@ write_csv(DA_RJ, "DA_RJ.csv")
 
 # Exporte o arquivo em formato CSV# Faça o commit com a mensagem "Script e dados TAREFA 3 - ATLAS"
 
+BDEM_RJ_2015 <- DA_RJ %>%
+  
+  mutate(
+    
+    # TAXA DE FECUNDIDADE GERAL
+    TFG = (TN / POPRC_F_15_49) * 1000,
+    
+    # TAXA DE MORTALIDADE GERAL
+    TMG = (TO / POPRE_T) * 1000,
+    
+    # RAZÃO DE MORTALIDADE MATERNA
+    RMM = (TO_MT / TN) * 100000,
+    
+    # TAXA DE MORTALIDADE MATERNA
+    TMM = (TO_MT / POPRC_F_15_49) * 100000,
+    
+    # TAXA DE MORTALIDADE MATERNA PRECOCE
+    TMM_P = (TO_MT_P / POPRC_F_15_49) * 100000,
+    
+    # TAXA DE MORTALIDADE INFANTIL
+    TMI = ((TO_NT + TO_PNT) / TN) * 1000,
+    
+    # TAXA DE MORTALIDADE NEONATAL
+    TMN = (TO_NT / TN) * 1000,
+    
+    # TAXA DE MORTALIDADE NEONATAL PRECOCE
+    TMN_P = (TO_NTP / TN) * 1000,
+    
+    # TAXA DE MORTALIDADE NEONATAL TARDIA
+    TMN_T = (TO_NTT / TN) * 1000
+  )
+
+# EXPORTAR BANCO FINAL
+write_csv(BDEM_RJ_2015, "BDEM_RJ_2015.csv")
+
+
+head(BDEM_RJ_2015)
+
+dim(BDEM_RJ_2015)
+
+summary(BDEM_RJ_2015)
 
 
 ############################################################################################

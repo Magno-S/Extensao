@@ -1219,6 +1219,8 @@ write_csv(ATLAS_RJ, "ATLAS_RJ.csv")
 ####################################################
 # ETAPA 4: GERAR BANCO DE DADOS FINAL DO ESTADO COM DADOS DO SIDRA, ATLAS, SINASC, SIM, SINISA E INDICADORES
 ####################################################
+library(dplyr)
+library(readr)
 
 # Tarefa 1: Fazer o merge dos bancos de dados criados nas etapas anteriores (SIDRA_UF, ATLAS_ UF,  SINASC_UF, SIM_UF e SINISA_UF), sendo que as variáveis deverão seguir a ordem
 
@@ -1226,6 +1228,55 @@ write_csv(ATLAS_RJ, "ATLAS_RJ.csv")
 # Chamar o banco de dados de DA_UF
 
 # Após o merge dos bancos, fazer commit “Script e dados agregados da UF”
+
+SIDRA_RJ  <- read_csv("SIDRA_RJ.csv")
+ATLAS_RJ  <- read_csv("ATLAS_RJ.csv")
+SINASC_RJ <- read_csv("SINASC_RJ.csv")
+SIM_RJ    <- read_csv("SIM_RJ.csv")
+SINISA_RJ <- read_csv("SINISA_RJ.csv")
+
+# PADRONIZAR CHAVES
+SIDRA_RJ$CODMUNRES  <- as.character(SIDRA_RJ$CODMUNRES)
+ATLAS_RJ$CODMUNRES  <- as.character(ATLAS_RJ$CODMUNRES)
+SINASC_RJ$CODMUNRES <- as.character(SINASC_RJ$CODMUNRES)
+SIM_RJ$CODMUNRES    <- as.character(SIM_RJ$CODMUNRES)
+SINISA_RJ$CODMUNRES <- as.character(SINISA_RJ$CODMUNRES)
+
+# MERGE DOS BANCOS
+DA_RJ <- SIDRA_RJ %>%
+  
+  full_join(
+    ATLAS_RJ,
+    by = c("ANO", "NIVEL", "CODMUNRES")
+  ) %>%
+  
+  full_join(
+    SINASC_RJ,
+    by = c("ANO", "NIVEL", "CODMUNRES")
+  ) %>%
+  
+  full_join(
+    SIM_RJ,
+    by = c("ANO", "NIVEL", "CODMUNRES")
+  ) %>%
+  
+  full_join(
+    SINISA_RJ,
+    by = c("ANO", "NIVEL", "CODMUNRES")
+  )
+
+# ORGANIZAR COLUNAS
+DA_RJ <- DA_RJ %>%
+  select(
+    ANO,
+    NIVEL,
+    CODMUNRES,
+    everything()
+  )
+
+# EXPORTAR BANCO
+write_csv(DA_RJ, "DA_RJ.csv")
+
 
 
 # Tarefa 2: Acrescentar no banco DA_UF os indicadores TFG, TMG, RMM, TMM, TMM_P, TMN, TMN_P, TMN_T e TMI e chamar o banco de BDEM_UF_2015
